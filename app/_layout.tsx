@@ -3,11 +3,9 @@ import { Tabs } from "expo-router";
 import React from "react";
 import { ActivityIndicator, Animated, View } from "react-native";
 import { AuthProvider, useAuth } from "../contexts/AuthContext";
-import { ThemeProvider, useTheme } from "./DarkModeContext"; // 引入 ThemeContext
 
 function RootLayoutNav() {
-  const { isAuthenticated, isLoading } = useAuth();
-  const { darkModeEnabled, backgroundColorAnim } = useTheme();  // 使用 useTheme 取得動畫和模式
+  const { isAuthenticated, isLoading } = useAuth();  // 使用 useTheme 取得動畫和模式
 
   if (isLoading) {
     return (
@@ -17,16 +15,12 @@ function RootLayoutNav() {
     );
   }
 
-  // 設置背景顏色的動畫過渡
-  const backgroundColor = backgroundColorAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["#f5f5f5", "#121212"],  // 淺色和深色背景
-  });
+
 
   // 未認證用戶
   if (!isAuthenticated) {
     return (
-      <Animated.View style={{ flex: 1, backgroundColor }}>
+      <Animated.View style={{ flex: 1}}>
         <Tabs screenOptions={{ headerShown: false, tabBarStyle: { display: 'none' } }}>
           <Tabs.Screen
             name="login"
@@ -48,7 +42,7 @@ function RootLayoutNav() {
 
   // 已認證用戶
   return (
-    <Animated.View style={{ flex: 1, backgroundColor }}>
+    <Animated.View style={{ flex: 1}}>
       <Tabs screenOptions={{ headerShown: false }}>
         <Tabs.Screen
           name="(tabs)/index"
@@ -115,9 +109,7 @@ function RootLayoutNav() {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <ThemeProvider>
         <RootLayoutNav />
-      </ThemeProvider>
     </AuthProvider>
   );
 }
