@@ -1,0 +1,71 @@
+name: Build Android
+on:
+  workflow_dispatch:
+    inputs:
+      os:
+        type: choice
+        description: OS to build on. Ubuntu is faster, MacOS supports iOS builds, Windows is unsupported
+        options:
+          - ubuntu-latest
+          - macos-latest
+      platform:
+        type: choice
+        description: Platform to build for
+        options:
+          - android
+          - ios
+      profile:
+        type: choice
+        description: Build profile to use
+        options:
+          - production
+          - preview
+          - development
+jobs:
+  build:
+    runs-on: ${{ github.event.inputs.os }}
+    strategy:
+      matrix:
+        node: [18.x]
+    steps:
+    - name: Check for EXPO_TOKEN
+      run: |
+        if [ -z "${{ secrets.EXPO_TOKEN }}" ]; then
+          echo "You must provide an EXPO_TOKEN secret linked to this project's Expo account in this repo's secrets. Learn more: https://docs.expo.dev/eas-update/github-actions"
+          exit 1
+        fi
+          
+    - name: 🏗 Setup repo
+      uses: actions/checkout@v2
+
+    - name: 🏗 Setup Node
+      uses: actions/setup-node@v2
+      with:
+        node-version: ${{ matrix.node }}
+
+    - name: 🏗 Setup Expo and EAS
+      uses: expo/expo-github-action@v7
+      with:
+        token: ${{ secrets.EXPO_TOKEN }}
+        expo-version: latest
+        eas-version: latest
+
+    - name: 🏗 Setup EAS local builds
+      run: npm i -g eas-cli-local-build-plugin
+
+    - name: 📦 Install dependencies
+      run: npm i
+
+    - name: 📦 Prebuild app
+      run: expo prebuild --platform ${{ github.event.inputs.platform }}
+
+    - name: 👷 Build app
+      run: |
+        eas build --local --non-interactive --output=./app-build --platform=${{ github.event.inputs.platform }} --profile=${{ github.event.inputs.profile }}
+
+    - name: 📱 Upload binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-${{ github.event.inputs.platform }}
+        path: app-build
+      
