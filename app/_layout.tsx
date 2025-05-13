@@ -1,29 +1,123 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
+import { Ionicons } from "@expo/vector-icons";
+import { Tabs } from "expo-router";
+import React from "react";
+import { ActivityIndicator, Animated, View } from "react-native";
+import { AuthProvider, useAuth } from "../contexts/AuthContext";
+import { ThemeProvider, useTheme } from "./DarkModeContext"; // 引入 ThemeContext
 
-import { useColorScheme } from '@/hooks/useColorScheme';
+function RootLayoutNav() {
+  const { isAuthenticated, isLoading } = useAuth();
+  const { darkModeEnabled, backgroundColorAnim } = useTheme();  // 使用 useTheme 取得動畫和模式
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
-
-  if (!loaded) {
-    // Async font loading only occurs in development.
-    return null;
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#0066cc" />
+      </View>
+    );
   }
 
+  // 設置背景顏色的動畫過渡
+  const backgroundColor = backgroundColorAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["#f5f5f5", "#121212"],  // 淺色和深色背景
+  });
+
+  // 未認證用戶
+  if (!isAuthenticated) {
+    return (
+      <Animated.View style={{ flex: 1, backgroundColor }}>
+        <Tabs screenOptions={{ headerShown: false, tabBarStyle: { display: 'none' } }}>
+          <Tabs.Screen
+            name="login"
+            options={{
+              title: "登入",
+              headerShown: false
+            }}
+          />
+          <Tabs.Screen
+            name="(tabs)/floorplan"
+            options={{
+              href: null
+            }}
+          />
+        </Tabs>
+      </Animated.View>
+    );
+  }
+
+  // 已認證用戶
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <Animated.View style={{ flex: 1, backgroundColor }}>
+      <Tabs screenOptions={{ headerShown: false }}>
+        <Tabs.Screen
+          name="(tabs)/index"
+          options={{
+            title: "首頁",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="home" color={color} size={size} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="(tabs)/sensor"
+          options={{
+            title: "傳感器",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="speedometer" color={color} size={size} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="(tabs)/settings"
+          options={{
+            title: "設定",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="settings" color={color} size={size} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="(tabs)/floorplan"
+          options={{
+            href: null
+          }}
+        />
+        <Tabs.Screen
+          name="login"
+          options={{
+            href: null
+          }}
+        />
+        <Tabs.Screen
+          name="accout-details"
+          options={{
+            href: null
+          }}
+        />
+        <Tabs.Screen
+          name="about"
+          options={{
+            href: null
+          }}
+        />
+        <Tabs.Screen
+          name="privacy-policy"
+          options={{
+            href: null
+          }}
+        />
+      </Tabs>
+    </Animated.View>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <AuthProvider>
+      <ThemeProvider>
+        <RootLayoutNav />
+      </ThemeProvider>
+    </AuthProvider>
   );
 }
